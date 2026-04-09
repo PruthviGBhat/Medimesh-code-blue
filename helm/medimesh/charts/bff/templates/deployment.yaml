@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Values.name }}
-  namespace: {{ .Values.global.namespaces.backend }}
+  namespace: medimesh
   labels:
     app: {{ .Values.name }}
     tier: backend
