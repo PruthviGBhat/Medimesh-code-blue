@@ -28,12 +28,12 @@ app.kubernetes.io/part-of: medimesh
 
 {{/* MongoDB connection string helper */}}
 {{- define "medimesh.mongoUri" -}}
-{{- $dbNs := .Values.global.namespaces.db -}}
+{{- $backendNs := .Values.global.namespaces.backend -}}
 {{- $mongo := .Values.global.mongo -}}
 {{- $replicas := int $mongo.replicas -}}
 {{- $hosts := list -}}
 {{- range $i := until $replicas -}}
-{{- $hosts = append $hosts (printf "%s-%d.%s.%s.svc.cluster.local:%d" $mongo.host $i $mongo.host $dbNs (int $mongo.port)) -}}
+{{- $hosts = append $hosts (printf "%s-%d.%s.%s.svc.cluster.local:%d" $mongo.host $i $mongo.host $backendNs (int $mongo.port)) -}}
 {{- end -}}
 mongodb://{{ join "," $hosts }}/{{ .dbName }}?replicaSet={{ $mongo.replicaSet }}
 {{- end }}

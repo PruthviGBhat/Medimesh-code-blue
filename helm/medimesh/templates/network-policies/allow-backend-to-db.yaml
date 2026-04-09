@@ -3,7 +3,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-backend-to-db
-  namespace: {{ .Values.global.namespaces.db }}
+  namespace: {{ .Values.global.namespaces.backend }}
   labels:
     {{- include "medimesh.labels" . | nindent 4 }}
 spec:
@@ -14,14 +14,14 @@ spec:
     - Ingress
   ingress:
     - from:
-        - namespaceSelector:
+        - podSelector:
             matchLabels:
-              medimesh/tier: backend
+              tier: backend
       ports:
         - protocol: TCP
           port: 27017
 ---
-# Allow: Backend egress to database namespace
+# Allow: Backend egress to database
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -37,9 +37,9 @@ spec:
     - Egress
   egress:
     - to:
-        - namespaceSelector:
+        - podSelector:
             matchLabels:
-              medimesh/tier: database
+              tier: database
       ports:
         - protocol: TCP
           port: 27017
@@ -49,7 +49,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: db-internal-replication
-  namespace: {{ .Values.global.namespaces.db }}
+  namespace: {{ .Values.global.namespaces.backend }}
   labels:
     {{- include "medimesh.labels" . | nindent 4 }}
 spec:
@@ -76,14 +76,12 @@ spec:
         - protocol: TCP
           port: 27017
 ---
-# Allow: DNS egress — all namespaces
-{{- range $ns := list .Values.global.namespaces.frontend .Values.global.namespaces.backend .Values.global.namespaces.db }}
----
+# Allow: DNS egress
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-dns
-  namespace: {{ $ns }}
+  namespace: {{ .Values.global.namespaces.backend }}
 spec:
   podSelector: {}
   policyTypes:
@@ -96,14 +94,13 @@ spec:
           port: 53
         - protocol: TCP
           port: 53
-{{- end }}
 ---
 # Allow: Frontend ingress (gateway/external)
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: frontend-allow-ingress
-  namespace: {{ .Values.global.namespaces.frontend }}
+  namespace: {{ .Values.global.namespaces.backend }}
 spec:
   podSelector:
     matchLabels:
@@ -118,7 +115,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-nfs-provisioner-egress
-  namespace: {{ .Values.global.namespaces.db }}
+  namespace: {{ .Values.global.namespaces.backend }}
   labels:
     {{- include "medimesh.labels" . | nindent 4 }}
 spec:

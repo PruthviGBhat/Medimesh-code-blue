@@ -10,9 +10,9 @@ global:
 
   # Namespace isolation
   namespaces:
-    frontend: medimesh-frontend
-    backend: medimesh-backend
-    db: medimesh-db
+    frontend: medimesh
+    backend: medimesh
+    db: medimesh
 
   # NFS storage config
   storage:
