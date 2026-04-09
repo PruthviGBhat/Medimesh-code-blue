@@ -1,0 +1,101 @@
+# ══════════════════════════════════════════════════════════════
+# MediMesh — MongoDB Single Node Verification Job
+# ══════════════════════════════════════════════════════════════
+# This Job verifies that the single MongoDB node is ready.
+# It waits for the MongoDB pod to be reachable and accepts connections.
+#
+# Usage:
+#   kubectl apply -f k8s/mongodb/mongodb-rs-init-job.yaml
+#
+# Check status:
+#   kubectl logs -n medimesh job/mongodb-rs-init
+# ══════════════════════════════════════════════════════════════
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mongodb-rs-init
+  namespace: medimesh
+  labels:
+    app: medimesh-mongodb
+    component: rs-init
+spec:
+  backoffLimit: 5
+  activeDeadlineSeconds: 300
+  template:
+    metadata:
+      labels:
+        app: medimesh-mongodb
+        component: rs-init
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: mongo-rs-init
+          image: mongo:7
+          imagePullPolicy: IfNotPresent
+          command:
+            - bash
+            - -c
+            - |
+              set -e
+
+              echo "═══════════════════════════════════════════════════════"
+              echo "  MediMesh — MongoDB Single Node Verification"
+              echo "═══════════════════════════════════════════════════════"
+              echo ""
+
+              # ── Step 1: Wait for MongoDB pod ────────────
+              HOST="medimesh-mongodb-0.medimesh-mongodb.medimesh.svc.cluster.local"
+              
+              echo "📡 Step 1: Waiting for MongoDB pod to be reachable..."
+              echo -n "  Checking $HOST..."
+              RETRY=0
+              MAX_RETRY=60
+              until mongosh --host "$HOST" --port 27017 --quiet \
+                    --eval "db.adminCommand('ping')" &>/dev/null; do
+                RETRY=$((RETRY + 1))
+                if [ $RETRY -ge $MAX_RETRY ]; then
+                  echo " FAILED after $MAX_RETRY attempts!"
+                  exit 1
+                fi
+                echo -n "."
+                sleep 3
+              done
+              echo " ✅ Ready"
+              echo ""
+
+              # ── Step 2: Print final status ──────────────────────
+              echo "📊 Step 2: Final MongoDB Status:"
+              echo "─────────────────────────────────────────"
+              mongosh \
+                --host "medimesh-mongodb-0.medimesh-mongodb.medimesh.svc.cluster.local" \
+                --port 27017 --quiet --eval "
+                  try {
+                    var s = rs.status();
+                    print('ReplicaSet Name: ' + s.set);
+                    print('Members:');
+                    s.members.forEach(function(m) {
+                      print('  [' + m._id + '] ' + m.name + ' → ' + m.stateStr);
+                    });
+                  } catch(e) {
+                    // If not a replicaset, just check server status
+                    print('MongoDB Server Status:');
+                    print('  Connected successfully to single node');
+                  }
+                "
+              echo "─────────────────────────────────────────"
+              echo ""
+
+              echo "═══════════════════════════════════════════════════════"
+              echo "  ✅ MongoDB single node verification completed successfully!"
+              echo ""
+              echo "  Connection String (for apps):"
+              echo "  mongodb://medimesh-mongodb-0.medimesh-mongodb:27017/<db>"
+              echo "═══════════════════════════════════════════════════════"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"
