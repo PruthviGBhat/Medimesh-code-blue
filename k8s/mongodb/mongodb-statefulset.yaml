@@ -107,29 +107,17 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
-          # ─── Health Probes ─────────────────────────────────
-          readinessProbe:
-            exec:
-              command:
-                - bash
-                - -c
-                - |
-                  mongosh --quiet --eval "
-                    try {
-                      var status = rs.status();
-                      var me = status.members.filter(m => m.self)[0];
-                      if (me.stateStr === 'PRIMARY' || me.stateStr === 'SECONDARY') {
-                        quit(0);
-                      }
-                      quit(1);
-                    } catch(e) {
-                      // rs not yet initiated — still pass basic ping
-                      db.adminCommand('ping');
-                    }
-                  "
-            initialDelaySeconds: 10
-            periodSeconds: 10
-            timeoutSeconds: 10
+           # ─── Health Probes ─────────────────────────────────
+           readinessProbe:
+             exec:
+               command:
+                 - mongosh
+                 - --quiet
+                 - --eval
+                 - "db.adminCommand('ping')"
+             initialDelaySeconds: 10
+             periodSeconds: 10
+             timeoutSeconds: 5
           livenessProbe:
             exec:
               command:
