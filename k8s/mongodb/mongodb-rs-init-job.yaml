@@ -53,12 +53,10 @@ spec:
               echo "═══════════════════════════════════════════════════════"
               echo ""
 
-              # ── Step 1: Wait for all 3 MongoDB pods ────────────
-              MEMBERS=(
-                "medimesh-mongodb-0.medimesh-mongodb.medimesh.svc.cluster.local"
-                "medimesh-mongodb-1.medimesh-mongodb.medimesh.svc.cluster.local"
-                "medimesh-mongodb-2.medimesh-mongodb.medimesh.svc.cluster.local"
-              )
+               # ── Step 1: Wait for MongoDB pod ────────────
+               MEMBERS=(
+                 "medimesh-mongodb-0.medimesh-mongodb.medimesh.svc.cluster.local"
+               )
 
               echo "📡 Step 1: Waiting for all MongoDB pods to be reachable..."
               for host in "${MEMBERS[@]}"; do
@@ -114,32 +112,21 @@ spec:
               echo "  ReplicaSet not yet initialized. Proceeding..."
               echo ""
 
-              # ── Step 3: Initialize the ReplicaSet ───────────────
-              echo "🚀 Step 3: Initializing ReplicaSet rs0 with 3 members..."
-              mongosh \
-                --host "medimesh-mongodb-0.medimesh-mongodb.medimesh.svc.cluster.local" \
-                --port 27017 --eval "
-                  rs.initiate({
-                    _id: 'rs0',
-                    members: [
-                      {
-                        _id: 0,
-                        host: 'medimesh-mongodb-0.medimesh-mongodb.medimesh.svc.cluster.local:27017',
-                        priority: 2
-                      },
-                      {
-                        _id: 1,
-                        host: 'medimesh-mongodb-1.medimesh-mongodb.medimesh.svc.cluster.local:27017',
-                        priority: 1
-                      },
-                      {
-                        _id: 2,
-                        host: 'medimesh-mongodb-2.medimesh-mongodb.medimesh.svc.cluster.local:27017',
-                        priority: 1
-                      }
-                    ]
-                  });
-                "
+               # ── Step 3: Initialize the ReplicaSet ───────────────
+               echo "🚀 Step 3: Initializing ReplicaSet rs0 with 1 member..."
+               mongosh \
+                 --host "medimesh-mongodb-0.medimesh-mongodb.medimesh.svc.cluster.local" \
+                 --port 27017 --eval "
+                   rs.initiate({
+                     _id: 'rs0',
+                     members: [
+                       {
+                         _id: 0,
+                         host: 'medimesh-mongodb-0.medimesh-mongodb.medimesh.svc.cluster.local:27017'
+                       }
+                     ]
+                   });
+                 "
               echo ""
 
               # ── Step 4: Wait for PRIMARY election ───────────────
@@ -187,71 +174,29 @@ spec:
               echo "─────────────────────────────────────────"
               echo ""
 
-              # ── Step 6: Quick replication test ──────────────────
-              echo "🧪 Step 6: Testing data replication..."
-              mongosh \
-                --host "medimesh-mongodb-0.medimesh-mongodb.medimesh.svc.cluster.local" \
-                --port 27017 --quiet --eval "
-                  // Write test doc on PRIMARY
-                  var testDb = db.getSiblingDB('replication-test');
-                  testDb.test.drop();
-                  testDb.test.insertOne({
-                    test: true,
-                    timestamp: new Date(),
-                    message: 'MediMesh ReplicaSet replication test'
-                  });
-                  print('  ✅ Test document written to PRIMARY');
-                "
-
-              # Give replication a moment
-              sleep 3
-
-              mongosh \
-                --host "medimesh-mongodb-1.medimesh-mongodb.medimesh.svc.cluster.local" \
-                --port 27017 --quiet --eval "
-                  // Read from SECONDARY to verify replication
-                  db.getMongo().setReadPref('secondary');
-                  var doc = db.getSiblingDB('replication-test').test.findOne();
-                  if (doc && doc.test === true) {
-                    print('  ✅ Data replicated to SECONDARY-1 successfully!');
-                  } else {
-                    print('  ⚠️  Data not yet replicated to SECONDARY-1 (may need more time)');
-                  }
-                "
-
-              mongosh \
-                --host "medimesh-mongodb-2.medimesh-mongodb.medimesh.svc.cluster.local" \
-                --port 27017 --quiet --eval "
-                  db.getMongo().setReadPref('secondary');
-                  var doc = db.getSiblingDB('replication-test').test.findOne();
-                  if (doc && doc.test === true) {
-                    print('  ✅ Data replicated to SECONDARY-2 successfully!');
-                  } else {
-                    print('  ⚠️  Data not yet replicated to SECONDARY-2 (may need more time)');
-                  }
-                "
-
-              # Clean up test data
-              mongosh \
-                --host "medimesh-mongodb-0.medimesh-mongodb.medimesh.svc.cluster.local" \
-                --port 27017 --quiet --eval "
-                  db.getSiblingDB('replication-test').dropDatabase();
-                  print('  🧹 Test data cleaned up');
-                "
+               # ── Step 6: Quick test ──────────────────
+               echo "🧪 Step 6: Testing MongoDB..."
+               mongosh \
+                 --host "medimesh-mongodb-0.medimesh-mongodb.medimesh.svc.cluster.local" \
+                 --port 27017 --quiet --eval "
+                   // Write test doc
+                   var testDb = db.getSiblingDB('test');
+                   testDb.test.drop();
+                   testDb.test.insertOne({
+                     test: true,
+                     timestamp: new Date(),
+                     message: 'MediMesh MongoDB test'
+                   });
+                   print('  ✅ Test document written');
+                 "
 
               echo ""
-              echo "═══════════════════════════════════════════════════════"
-              echo "  ✅ MongoDB ReplicaSet initialized successfully!"
-              echo ""
-              echo "  PRIMARY:   medimesh-mongodb-0"
-              echo "  SECONDARY: medimesh-mongodb-1"
-              echo "  SECONDARY: medimesh-mongodb-2"
-              echo ""
-              echo "  Connection String (for apps):"
-              echo "  mongodb://medimesh-mongodb-0.medimesh-mongodb:27017,"
-              echo "  medimesh-mongodb-1.medimesh-mongodb:27017,"
-              echo "  medimesh-mongodb-2.medimesh-mongodb:27017/<db>?replicaSet=rs0"
-              echo "═══════════════════════════════════════════════════════"
+               echo "═══════════════════════════════════════════════════════"
+               echo "  ✅ MongoDB initialized successfully!"
+               echo ""
+               echo "  Connection String (for apps):"
+               echo "  mongodb://medimesh-mongodb-0.medimesh-mongodb:27017/<db>?replicaSet=rs0"
+               echo "═══════════════════════════════════════════════════════"
           resources:
             requests:
               cpu: "100m"

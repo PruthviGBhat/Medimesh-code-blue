@@ -49,7 +49,7 @@ metadata:
     tier: database
 spec:
   serviceName: medimesh-mongodb
-  replicas: 3
+  replicas: 1
   podManagementPolicy: OrderedReady
   selector:
     matchLabels:
@@ -140,32 +140,16 @@ spec:
             initialDelaySeconds: 15
             periodSeconds: 20
             timeoutSeconds: 5
-          volumeMounts:
-            - name: mongodb-data
-              mountPath: /data/db
-          resources:
-            requests:
-              memory: "256Mi"
-              cpu: "250m"
+           volumeMounts:
+             - name: mongodb-data
+               mountPath: /data/db
+           resources:
+             requests:
+               memory: "256Mi"
+               cpu: "250m"
             limits:
               memory: "512Mi"
               cpu: "500m"
-
-  # ─── VolumeClaimTemplates (NFS-backed PVC per pod) ───────
-  # Automatically creates 3 PVCs:
-  #   mongodb-data-medimesh-mongodb-0  (5Gi, nfs-dynamic)
-  #   mongodb-data-medimesh-mongodb-1  (5Gi, nfs-dynamic)
-  #   mongodb-data-medimesh-mongodb-2  (5Gi, nfs-dynamic)
-  #
-  # Each PVC gets its own NFS subdirectory — any pod on any
-  # node can mount it. No hostPath, no nodeAffinity needed.
-  volumeClaimTemplates:
-    - metadata:
-        name: mongodb-data
-      spec:
-        accessModes:
-          - ReadWriteOnce
-        storageClassName: nfs-dynamic
-        resources:
-          requests:
-            storage: 5Gi
+      volumes:
+        - name: mongodb-data
+          emptyDir: {}
