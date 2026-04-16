@@ -113,3 +113,24 @@ spec:
       protocol: TCP
       name: http
 
+---
+# ─── LoadBalancer Service (External Access) ────
+apiVersion: v1
+kind: Service
+metadata:
+  name: medimesh-frontend-lb
+  namespace: medimesh
+  labels:
+    app: medimesh-frontend
+    tier: frontend
+spec:
+  type: LoadBalancer
+  selector:
+    app: medimesh-frontend
+    tier: frontend
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: http
+
