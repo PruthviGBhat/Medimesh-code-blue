@@ -61,8 +61,6 @@ spec:
         app: medimesh-mongodb
         tier: database
     spec:
-
-
       # ─── Allow scheduling on master node if needed ────────
       tolerations:
         - key: node-role.kubernetes.io/control-plane
