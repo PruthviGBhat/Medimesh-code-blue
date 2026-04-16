@@ -36,8 +36,8 @@ spec:
           env:
             - name: PORT
               value: "5005"
-             - name: MONGO_URI
-               value: "mongodb://medimesh-mongodb-0.medimesh-mongodb:27017/medimesh-vitals-db?replicaSet=rs0"
+            - name: MONGO_URI
+              value: "mongodb://medimesh-mongodb-0.medimesh-mongodb:27017/medimesh-vitals-db?replicaSet=rs0"
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:

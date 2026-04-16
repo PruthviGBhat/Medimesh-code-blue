@@ -61,19 +61,7 @@ spec:
         app: medimesh-mongodb
         tier: database
     spec:
-      # ─── Spread pods across nodes for HA ──────────────────
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                    - key: app
-                      operator: In
-                      values:
-                        - medimesh-mongodb
-                topologyKey: kubernetes.io/hostname
+
 
       # ─── Allow scheduling on master node if needed ────────
       tolerations:
